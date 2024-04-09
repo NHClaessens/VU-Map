@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement style="flex-grow: 0; background-color: rgba(255, 255, 255, 0); flex-direction: row; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; height: 30px;">
+        <ui:Label tabindex="-1" text="Coffee machine" parse-escape-sequences="true" display-tooltip-when-elided="true" name="title" style="flex-grow: 1; justify-content: center; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px;" />
+        <ui:Label tabindex="-1" text="F5" parse-escape-sequences="true" display-tooltip-when-elided="true" name="floor" style="flex-shrink: 1; color: rgb(0, 128, 201); justify-content: center; margin-top: 2px; margin-right: 2px; margin-bottom: 2px; margin-left: 2px;" />
+    </ui:VisualElement>
+</ui:UXML>
