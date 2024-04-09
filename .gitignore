@@ -71,7 +71,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 
-/Assets/3D\ models
 Library/Bee/Android/Prj/Mono2x/Gradle/launcher/build/outputs/apk/debug/launcher-debug.apk
 Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/src/main/assets/bin/Data/data.unity3d
 Library/Bee/Android/Prj/Mono2x/Gradle/launcher/build/intermediates/assets/debug/mergeDebugAssets/bin/Data/data.unity3d

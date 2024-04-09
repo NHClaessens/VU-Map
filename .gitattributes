@@ -1,1 +1,2 @@
 Assets/Scenes/*.unity filter=lfs diff=lfs merge=lfs -text
+Assets/3D[[:space:]]models/*.fbx filter=lfs diff=lfs merge=lfs -text
