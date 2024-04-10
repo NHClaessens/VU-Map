@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class PositionController : MonoBehaviour
+public class PositionController : Singleton<PositionController>
 {
     public UnityEvent<Vector3> positionUpdated = new UnityEvent<Vector3>();
     public Vector3 position {
@@ -20,7 +20,9 @@ public class PositionController : MonoBehaviour
     [SerializeField]
     private Vector3 _position;
     
-    void Start() {
+    public PositionController() : base() {
+        indicator = GameObject.Find("Indicator");
+        position = indicator.transform.position;
         positionUpdated.AddListener((Vector3 vec) => {
             if(indicator) {
                 indicator.transform.position = vec;
