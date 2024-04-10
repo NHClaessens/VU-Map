@@ -7,7 +7,6 @@ using UnityEngine.UIElements;
 
 public class NavUIConfig : MonoBehaviour
 {
-    public NavigationController navigationController;
     public VisualTreeAsset instructionTemplate;
     public float snapSpeed = 1;
 
@@ -20,7 +19,7 @@ public class NavUIConfig : MonoBehaviour
     private Coroutine smoothSnapCoroutine = null;
 
     void OnEnable() {
-        navigationController.navigationUpdated.AddListener(BuildInstructions);
+        NavigationController.Instance.navigationUpdated.AddListener(BuildInstructions);
         rootVisualElement = GetComponent<UIDocument>().rootVisualElement;
         rootVisualElement.Q<VisualElement>("safe-area-content-container").AddToClassList("nonUI");
 
@@ -42,6 +41,13 @@ public class NavUIConfig : MonoBehaviour
 
     private void BuildInstructions(List<Instruction> instructions) {
         this.instructions = instructions;
+
+
+
+        Debug.Log(instructions.Count);
+
+
+
         instructionList.Clear();
         // float maxWidth = 406;
 
@@ -52,11 +58,12 @@ public class NavUIConfig : MonoBehaviour
             clone.Q<Label>("title").text = instruction.toString();
 
             clone.Q<Label>("distance").text = DistToString(instruction.distance);
-            clone.Q<VisualElement>("icon").style.backgroundImage = new StyleBackground(instruction.icon);
+            Debug.Log(instruction.getIcon());
+            clone.Q<VisualElement>("icon").style.backgroundImage = new StyleBackground(instruction.getIcon());
 
             if(i < instructions.Count - 1) {
                 Instruction nextInstruction = instructions[i+1];
-                clone.Q<VisualElement>("nextIcon").style.backgroundImage = new StyleBackground(nextInstruction.icon);
+                clone.Q<VisualElement>("nextIcon").style.backgroundImage = new StyleBackground(nextInstruction.getIcon());
             } else {
                 clone.Q<VisualElement>("nextInstruction").style.visibility = Visibility.Hidden;
                 clone.Q<VisualElement>("currentInstruction").style.borderBottomLeftRadius = 10;

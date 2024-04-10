@@ -104,7 +104,7 @@ public class SearchUIConfig : MonoBehaviour
         ui.rootVisualElement.Q<Button>("searchBarGo").clicked += () => {
             if(selectedPOI) {
                 uiStateManager.SetUIState("NavUI");
-                navigationController.StartNavigation(selectedPOI.transform.position);
+                NavigationController.Instance.StartNavigation(selectedPOI.transform.position);
             }
         };
 

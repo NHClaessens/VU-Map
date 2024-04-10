@@ -7,15 +7,14 @@ using UnityEngine.AI;
 using UnityEngine.Events;
 using UnityEngine.UIElements;
 
-public class NavigationController : MonoBehaviour
+public class NavigationController : Singleton<NavigationController>
 {
     public Vector3 destination;
-    public float turnDistanceThreshold;
-    public float subCornerThreshold;
-    public float maxDistThreshold;
+    public float turnDistanceThreshold = 1.5f;
+    public float subCornerThreshold = 0.5f;
+    public float maxDistThreshold = 5f;
     public List<Instruction> allInstructions;
     public List<Instruction> instructions;
-    public PositionController positionController;
     public NavUIConfig navUI;
     public UnityEvent<List<Instruction>> navigationUpdated = new UnityEvent<List<Instruction>>();
 
@@ -25,10 +24,12 @@ public class NavigationController : MonoBehaviour
     public Vector3[] waypoints;
 
     // Start is called before the first frame update
-    public void Start()
+    public NavigationController() : base()
     {
-        line = GetComponent<LineRenderer>();
-        positionController.positionUpdated.AddListener(LocationUpdated);
+        line = GameObject.Find("Path").GetComponent<LineRenderer>();
+        PositionController.Instance.positionUpdated.AddListener(LocationUpdated);
+
+        navUI = GameObject.Find("NavUI").GetComponent<NavUIConfig>();
     }
 
     // Update is called once per frame
@@ -45,7 +46,9 @@ public class NavigationController : MonoBehaviour
         destination = dest;
 
         NavMeshPath path = new NavMeshPath();
-        NavMesh.CalculatePath(positionController.position, destination, NavMesh.AllAreas, path);
+        bool possible = NavMesh.CalculatePath(PositionController.Instance.position, destination, NavMesh.AllAreas, path);
+
+        if(!possible) return;
 
         waypoints = CleanPath(path.corners).ToArray();
         DrawPath(waypoints);
@@ -58,7 +61,7 @@ public class NavigationController : MonoBehaviour
         Vector3 destination = waypoints[wayPointIndex];
         Ray path = new Ray(origin, destination - origin);
 
-        float distance = Vector3.Cross(path.direction, positionController.position - path.origin).magnitude;
+        float distance = Vector3.Cross(path.direction, PositionController.Instance.position - path.origin).magnitude;
 
         if(distance > maxDistThreshold) {
             Debug.Log("Left route, recalculating");
@@ -82,6 +85,7 @@ public class NavigationController : MonoBehaviour
 
         for (int i = 1; i < path.Length-1; i++)
         {            
+            Debug.Log(path[i]);
             if (
                 Vector3.Distance(path[i], path[i + 1]) <= subCornerThreshold
                 && isAngleSameDirection(
@@ -124,14 +128,20 @@ public class NavigationController : MonoBehaviour
     {
         List<Instruction> instructions = new List<Instruction>();
 
+        if(pathCorners.Length < 3) {
+            instructions.Add(new Instruction(InstructionType.Straight, pathCorners[0], Vector3.Distance(pathCorners[0], pathCorners[1])));
+            return instructions;
+        }
+
         for (int i = 1; i < pathCorners.Length - 1; i++)
         {
             // Calculate the angle between the vectors
             float angle = calculateAngle(pathCorners[i-1], pathCorners[i], pathCorners[i+1]);
 
             InstructionType type;
-            // Determine the instruction based on the angle
-            if (angle > 15 && angle <= 45)
+            if(angle >= -15 && angle <= 15)
+                type = InstructionType.Straight;
+            else if (angle > 15 && angle <= 45)
                 type = InstructionType.SlightRight;
             else if (angle > 45)
                 type = InstructionType.TurnRight;
@@ -140,10 +150,9 @@ public class NavigationController : MonoBehaviour
             else if (angle < -45)
                 type = InstructionType.TurnLeft;
             else type = InstructionType.Error;
-            // ... Other conditions for different instructions
 
-            Instruction clone = allInstructions.Where((e) => e.instructionType == type).ElementAtOrDefault(0);
-            instructions.Add(new Instruction(type, pathCorners[i], Vector3.Distance(pathCorners[i-1], pathCorners[i]), clone.icon));
+
+            instructions.Add(new Instruction(type, pathCorners[i], Vector3.Distance(pathCorners[i-1], pathCorners[i])));
         }
 
         this.instructions = instructions;
@@ -189,19 +198,20 @@ public class NavigationController : MonoBehaviour
 
 [System.Serializable]
 public class Instruction {
-    public Instruction(InstructionType instructionType, Vector3 location, float distance, Sprite icon) {
+    public Instruction(InstructionType instructionType, Vector3 location, float distance) {
         this.instructionType = instructionType;
         this.location = location;
         this.distance = distance;
-        this.icon = icon;
     }
     public InstructionType instructionType;
     public Vector3 location;
     public float distance;
-    public Sprite icon;
+    // public Sprite icon;
 
     public string toString() {
         switch(instructionType) {
+            case InstructionType.Straight:
+                return "Go straight";
             case InstructionType.TurnLeft:
                 return "Turn left";
             case InstructionType.TurnRight:
@@ -221,10 +231,35 @@ public class Instruction {
                 return "Something went wrong...";
         }
     }
+
+    public Texture2D getIcon() {
+        switch(instructionType) {
+            case InstructionType.Straight:
+                return Resources.Load<Texture2D>("Icons/goStraight");
+            case InstructionType.TurnLeft:
+                return Resources.Load<Texture2D>("Icons/turnLeft");
+            case InstructionType.TurnRight:
+                return Resources.Load<Texture2D>("Icons/turnRight");
+            case InstructionType.SlightLeft:
+                return Resources.Load<Texture2D>("Icons/slightLeft");
+            case InstructionType.SlightRight:
+                return Resources.Load<Texture2D>("Icons/slightRight");
+            case InstructionType.TurnAround:
+                return Resources.Load<Texture2D>("Icons/turnAround");
+            case InstructionType.GoUpStairs:
+                return Resources.Load<Texture2D>("Icons/slightRight");
+            case InstructionType.GoDownStairs:
+                return Resources.Load<Texture2D>("Icons/turnAround");
+            case InstructionType.Error:
+            default:
+                return null;
+        }
+    }
 }
 
 public enum InstructionType
 {
+    Straight,
     TurnLeft,
     TurnRight,
     SlightLeft,

@@ -8,10 +8,6 @@ public class BasicMovement : MonoBehaviour
 {
     public float speed = 5f;
     public float rotationSpeed = 100f;
-    private PositionController positionController;
-    void Start() {
-        positionController = GetComponent<PositionController>();
-    }
     void Update()
     {
         // if(IsMouseOverUIElement()) return;
@@ -21,7 +17,7 @@ public class BasicMovement : MonoBehaviour
 
         Vector3 movement = new Vector3(horizontalInput, 0f, verticalInput);
         if(movement.magnitude > 0) {
-            positionController.position += movement * speed * Time.deltaTime;
+            PositionController.Instance.position += movement * speed * Time.deltaTime;
         }
     }
 
