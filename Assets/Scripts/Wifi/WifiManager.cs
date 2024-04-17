@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Android;
+using UnityEngine.Events;
+
 
 public class WifiManager : MonoBehaviour
 {
     public GameObject text;
+    public UnityEvent<string> scanComplete = new UnityEvent<string>();
     private AndroidJavaObject wifiManager;
     private AndroidJavaObject instance;
 
@@ -36,11 +39,13 @@ public class WifiManager : MonoBehaviour
         if(wifiManager != null) {
             Debug.Log("Manager starting scan");
             wifiManager.Call("startScan", instance);
+        } else {
+            scanComplete.Invoke("Not on android, can't scan");
         }
     }
 
     public void onScanComplete(string result) {
-        Debug.Log("Scan complete: " + result);
+        scanComplete.Invoke(result);
     }
 
     public void onScanFailed(string result) {

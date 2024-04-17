@@ -18,6 +18,9 @@ public class CameraController : MonoBehaviour
     public UnityEvent onZoom = new UnityEvent();
     Vector3 touchStart;
     Camera cam;
+
+    private Coroutine moveRoutine;
+    private Coroutine zoomRoutine;
     // Start is called before the first frame update
     void Start()
     {
@@ -69,12 +72,21 @@ public class CameraController : MonoBehaviour
     }
 
     public void moveTo(Vector3 pos, float duration) {
-        StartCoroutine(moveToRoutine(pos, duration));
+        if(moveRoutine != null) {
+            StopCoroutine(moveRoutine);
+        }
+        moveRoutine = StartCoroutine(moveToRoutine(pos, duration));
     }
 
     public void moveTo(Vector3 pos, float orthoSize, float duration) {
-        StartCoroutine(moveToRoutine(pos, duration));
-        StartCoroutine(setOrthoSize(orthoSize, duration));
+        if(moveRoutine != null) {
+            StopCoroutine(moveRoutine);
+        }
+        moveRoutine = StartCoroutine(moveToRoutine(pos, duration));
+        if(zoomRoutine != null) {
+            StopCoroutine(zoomRoutine);
+        }
+        zoomRoutine = StartCoroutine(setOrthoSize(orthoSize, duration));
     }
 
     public void cancelMoveTo() {
