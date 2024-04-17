@@ -35,13 +35,13 @@ public class WifiScanReceiver extends BroadcastReceiver {
             for (ScanResult result : results) {
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("SSID", result.SSID);
-                jsonObject.put("BSSID", result.BSSID);
+                jsonObject.put("MAC", result.BSSID);
                 jsonObject.put("signalStrength", result.level);
                 jsonArray.put(jsonObject);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        UnityPlayer.UnitySendMessage("Manager", "onScanComplete", jsonArray.toString());
+        UnityPlayer.UnitySendMessage("WifiManager", "onScanComplete", jsonArray.toString());
     }
 }

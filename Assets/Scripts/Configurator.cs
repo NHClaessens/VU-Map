@@ -90,7 +90,3 @@ public class Configurator : MonoBehaviour
     }
 }
 
-public enum SamplingMethod {
-    Random,
-    Grid
-}
