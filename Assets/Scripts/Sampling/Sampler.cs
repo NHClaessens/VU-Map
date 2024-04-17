@@ -1,11 +1,11 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
 using TMPro;
 using UnityEngine.UI;
-using Unity.VisualScripting;
+using System.Text;
+using System.IO;
+using System.Globalization;
 
 public class Sampler : MonoBehaviour
 {
@@ -14,8 +14,8 @@ public class Sampler : MonoBehaviour
     public int randomSampleAmount;
     public int wifiSampleAmount;
     public float gridSize = 1f;
-    public float[] floorHeights;
-    public Sample[] results;
+    public FloorHeight[] floorHeights;
+    public List<Sample> samples = new List<Sample>();
     public GameObject sampleUI;
     public CameraController cameraController;
 
@@ -34,6 +34,7 @@ public class Sampler : MonoBehaviour
     public TMP_Text progress;
     private int coveredLocations = 0;
     private int totalLocations = 0;
+    private string fileName;
 
     public void Start() {
         start = sampleUI.transform.Find("Panel/start").gameObject;
@@ -47,12 +48,33 @@ public class Sampler : MonoBehaviour
 
     }
 
+    public void Test() {
+        GameObject a = GameObject.Find("A");
+        GameObject b = GameObject.Find("B");
+        print(Utilities.CalculateObstacleThickness(a.transform.position, b.transform.position, "Wall, Floor"));
+    }
+
     private void print(string s) {
         Debug.Log("Sampler: " + s);
     }
     public void StartSampling() {
         print("Start sampling");
         wifiManager.scanComplete.AddListener(onScanComplete);
+
+     
+        fileName = $"{System.DateTime.Now:yyyyMMdd_HHmmss}-wifi{wifiSampleAmount}";
+        switch(samplingMethod) {
+            case SamplingMethod.Grid:
+                fileName += $"-grid{gridSize}.csv";
+                break;
+            case SamplingMethod.Random:
+                fileName += $"-random{randomSampleAmount}.csv";
+                break;
+            default:
+                fileName += ".csv";
+                break;
+        }
+
 
         bounds = new Bounds(transform.position, Vector3.zero);
         Renderer[] renderers = GameObject.Find("3D models").GetComponentsInChildren<Renderer>();
@@ -74,6 +96,12 @@ public class Sampler : MonoBehaviour
         indicator.SetActive(true);
         indicator.transform.position = new Vector3(pos.x, 990, pos.z);
         currentPosition = pos;
+
+        foreach(FloorHeight floor in floorHeights) {
+            if(pos.y > floor.height) {
+                Utilities.SelectFloor(floor.name);
+            }
+        }
 
         coveredLocations++;
 
@@ -104,7 +132,7 @@ public class Sampler : MonoBehaviour
         Gizmos.DrawWireCube(bounds.center, bounds.size);
     }
 
-    private void generateSampleLocations(){
+    public void generateSampleLocations(){
         switch(samplingMethod){
             case SamplingMethod.Grid:
                 sampleGrid();
@@ -134,13 +162,19 @@ public class Sampler : MonoBehaviour
         } else {
             wifiManager.startScan();
         }
-
-        // Measurement m = new Measurement("AP1")
     }
 
     private void processMeasurements() {
+        // Result: [{"SSID":"","MAC":"e6:75:dc:e9:cd:d9","signalStrength":-83},{"SSID":"EEMN Network","MAC":"18:e8:29:9b:42:27","signalStrength":-26},{"SSID":"boomland","MAC":"bc:df:58:ca:64:d5","signalStrength":-84},{"SSID":"EEMN Network","MAC":"18:e8:29:9a:42:27","signalStrength":-32},{"SSID":"Ziggo-ap-4098a8b","MAC":"c4:71:54:09:8a:8b","signalStrength":-81},{"SSID":"Gasten","MAC":"ce:ce:1e:2c:a1:70","signalStrength":-80},{"SSID":"KPN69DF26","MAC":"e4:75:dc:1d:cc:63","signalStrength":-82},{"SSID":"REMOTE32usxw","MAC":"00:1d:c9:07:e9:7d","signalStrength":-80},{"SSID":"VR46","MAC":"e4:75:dc:e9:cd:d9","signalStrength":-83},{"SSID":"boomland","MAC":"bc:df:58:c7:70:f9","signalStrength":-82},{"SSID":"","MAC":"e6:75:dc:2d:cc:63","signalStrength":-80},{"SSID":"FRITZ!Box 5490 DC","MAC":"cc:ce:1e:2c:a1:70","signalStrength":-83}]
+        
         foreach(string res in intermediate) {
-            print("Result: " + res);
+            string wrappedJson = "{\"measurements\":" + res + "}";
+            print("Result: " + wrappedJson);
+            
+            Sample sample = JsonUtility.FromJson<Sample>(wrappedJson);
+            sample.location = currentPosition;
+            
+            samples.Add(sample);
         }
 
         intermediate.Clear();
@@ -152,30 +186,34 @@ public class Sampler : MonoBehaviour
             samplePoints.Clear();
             start.GetComponent<Button>().enabled = false;
         }
+        saveToCSV(samples, fileName);
     }
 
     private void sampleGrid() {
-        for (float x = bounds.min.x; x < bounds.max.x; x += gridSize)
-        {
-            for (float z = bounds.min.z; z < bounds.max.z; z += gridSize)
+        samplePoints.Clear();
+        foreach(FloorHeight floorHeight in floorHeights) {
+            for (float x = bounds.min.x; x < bounds.max.x; x += gridSize)
             {
-                // Check if the grid point is inside the floor shape
-                Vector3 gridPoint = new Vector3(x, 0f, z);
-
-                if (isPointOnNavMesh(gridPoint))
+                for (float z = bounds.min.z; z < bounds.max.z; z += gridSize)
                 {
-                    // Create a square or perform some action at this grid point
-                    samplePoints.Add(gridPoint);
-                    print(gridPoint + " on Mesh");
-                } else {
-                    missedPoints.Add(gridPoint);
+                    // Check if the grid point is inside the floor shape
+                    Vector3 gridPoint = new Vector3(x, floorHeight.height, z);
+
+                    if (isPointOnNavMesh(gridPoint))
+                    {
+                        samplePoints.Add(gridPoint);
+                        print(gridPoint + " on Mesh");
+                    } else {
+                        missedPoints.Add(gridPoint);
+                    }
+                    print(gridPoint + " NOT ON MESH");
                 }
-                print(gridPoint + " NOT ON MESH");
             }
         }
     }
 
     private void sampleRandom() {
+        samplePoints.Clear();
         for(int i = 0; i < randomSampleAmount; i++) {
             Vector3 randomPoint = new Vector3(
                 Random.Range(bounds.min.x, bounds.max.x),
@@ -196,6 +234,79 @@ public class Sampler : MonoBehaviour
         NavMeshHit hit;
         return NavMesh.SamplePosition(point, out hit,0.1f, NavMesh.AllAreas);
     }
+
+    public static void saveToCSV(List<Sample> samples, string fileName) {
+        string outputCsv = ProcessSamples("Data/AP-MAC", samples);
+
+        string path = Path.Combine(Application.persistentDataPath, fileName);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+        File.WriteAllText(path, outputCsv);
+    }
+
+    public static string ProcessSamples(string apCsvContent, List<Sample> samples)
+    {
+        // Parse the AP CSV content
+        var aps = ParseAPCsv(apCsvContent);
+        
+        // Prepare CSV header
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.Append("Location X,Location Y,Location Z");
+        foreach (var ap in aps)
+        {
+            csvBuilder.Append($",{ap.Key}"); // AP Name as header
+        }
+        csvBuilder.AppendLine();
+
+        // Process each sample
+        foreach (var sample in samples)
+        {
+            csvBuilder.Append($"{sample.location.x.ToString(CultureInfo.InvariantCulture)},{sample.location.y.ToString(CultureInfo.InvariantCulture)},{sample.location.z.ToString(CultureInfo.InvariantCulture)}");
+
+            Dictionary<string, float> macSignalMap = new Dictionary<string, float>();
+            foreach (var measurement in sample.measurements)
+            {
+                macSignalMap[measurement.MAC] = measurement.signalStrength;
+            }
+
+            foreach (var ap in aps)
+            {
+                float signalStrength = 1; // Default signal strength
+                if (macSignalMap.ContainsKey(ap.Value))
+                {
+                    signalStrength = macSignalMap[ap.Value];
+                }
+                csvBuilder.Append($",{signalStrength}");
+            }
+            csvBuilder.AppendLine();
+        }
+
+        return csvBuilder.ToString();
+    }
+
+    
+    public static Dictionary<string, string> ParseAPCsv(string path)
+    {
+        string csvContent = Resources.Load<TextAsset>(path).text;
+        Dictionary<string, string> aps = new Dictionary<string, string>();
+        using (System.IO.StringReader reader = new System.IO.StringReader(csvContent))
+        {
+            string line = reader.ReadLine(); // Skip header
+            while ((line = reader.ReadLine()) != null)
+            {
+                string[] items = line.Split(',');
+                if (items.Length >= 3)
+                {
+                    string apName = items[0];
+                    string macAddress = items[1];
+                    aps[apName] = macAddress;
+                }
+            }
+        }
+        print(aps);
+        return aps;
+    }
 }
 
 public enum SamplingMethod {
@@ -206,13 +317,25 @@ public enum SamplingMethod {
 [System.Serializable]
 public class Sample {
     public Vector3 location;
-    public Measurement[] measurements;
+    public List<Measurement> measurements = new List<Measurement>();
+
+    public override string ToString()
+    {
+        return $"Location: {location}, Measurement nr.: {measurements.Count}";
+    }
+
+    public string toCSV() {
+        StringBuilder csv = new StringBuilder();
+
+        return csv.ToString();
+    }
 }
 
 [System.Serializable]
 public class Measurement {
 
-    public Measurement(string MAC, float signalStrength) {
+    public Measurement(string SSID, string MAC, float signalStrength) {
+        this.SSID = SSID;
         this.MAC = MAC;
         this.signalStrength = signalStrength;
     }
@@ -222,7 +345,18 @@ public class Measurement {
         this.obstacles = obstacles;
     }
 
+    override public string ToString() {
+        return $"SSID: {SSID}, MAC: {MAC}, RSSI: {signalStrength}";
+    }
+
+    public string SSID;
     public string MAC;
     public float signalStrength;
     public Dictionary<string, float> obstacles;
+}
+
+[System.Serializable]
+public class FloorHeight {
+    public string name;
+    public float height;
 }

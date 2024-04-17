@@ -40,7 +40,7 @@ public class WifiManager : MonoBehaviour
             Debug.Log("Manager starting scan");
             wifiManager.Call("startScan", instance);
         } else {
-            scanComplete.Invoke("Not on android, can't scan");
+            scanComplete.Invoke("{}");
         }
     }
 
