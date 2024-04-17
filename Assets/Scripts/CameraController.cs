@@ -16,6 +16,7 @@ public class CameraController : MonoBehaviour
     public Vector3 maxPos;
     public float zoomSensitivity;
     public UnityEvent onZoom = new UnityEvent();
+    public bool stopMovement;
     Vector3 touchStart;
     Camera cam;
 
@@ -180,6 +181,7 @@ public class CameraController : MonoBehaviour
 
     bool IsMouseOverUIElement()
     {
+        if (stopMovement) return true;
         if (Input.touchCount > 0 || EventSystem.current.IsPointerOverGameObject())
         {
             PointerEventData pointerData = new PointerEventData(EventSystem.current)
@@ -190,24 +192,7 @@ public class CameraController : MonoBehaviour
             List<RaycastResult> results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(pointerData, results);
 
-            foreach (var result in results)
-            {
-                if(result.gameObject.name == "PanelSettings") {
-                    IPanel panel = result.gameObject.GetComponent<PanelEventHandler>().panel;
-                    Vector2 screenPos;
-                    if(Application.platform == RuntimePlatform.Android) {
-                        screenPos = Input.GetTouch(0).position;
-                    } else {
-                        screenPos = Input.mousePosition;
-                    }
-
-                    Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
-                    Vector2 coords = RuntimePanelUtils.CameraTransformWorldToPanel(panel, worldPos, Camera.main);
-                    VisualElement el = panel?.Pick(coords);
-
-                    return !el?.GetClasses().Contains("nonUI") ?? false;
-                }
-            }
+            return results.Count > 0;
         }
         return false; // Mouse is not over a UI Toolkit element
     }
