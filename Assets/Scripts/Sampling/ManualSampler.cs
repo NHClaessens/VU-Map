@@ -58,7 +58,6 @@ public class ManualSampler : MonoBehaviour {
     public void ScanComplete(string result) {
         intermediate.Add(result);
 
-        progress.GetComponent<TMP_Text>().text = $"Locations: {samples.Count / wifiSampleAmount}\nMeasurements: {intermediate.Count}/{wifiSampleAmount}";
         
 
         if(intermediate.Count >= wifiSampleAmount) {
@@ -66,6 +65,7 @@ public class ManualSampler : MonoBehaviour {
         } else {
             wifiManager.startScan();
         }
+        progress.GetComponent<TMP_Text>().text = $"Locations: {samples.Count / wifiSampleAmount}\nMeasurements: {intermediate.Count}/{wifiSampleAmount}";
     }
 
     private void processMeasurements() {

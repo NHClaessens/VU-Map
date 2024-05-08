@@ -95,7 +95,7 @@ public class CameraController : MonoBehaviour
     }
 
     IEnumerator moveToRoutine(Vector3 pos, float duration) {
-        pos = new Vector3(pos.x, cam.transform.position.y, pos.z);
+        pos = new Vector3(pos.x, 999, pos.z);
         float dist = Vector3.Distance(cam.transform.position, pos);
         while(cam.transform.position != pos) {
             cam.transform.position = Vector3.MoveTowards(cam.transform.position, pos, dist / (duration / Time.deltaTime));
