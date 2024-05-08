@@ -13,7 +13,9 @@ public class Sampler : MonoBehaviour
     public SamplingMethod samplingMethod;
     public int randomSampleAmount;
     public int wifiSampleAmount;
+    public bool directionalScans = true;
     public float gridSize = 1f;
+    public GameObject customSampleSet;
     public FloorHeight[] floorHeights;
     public List<Sample> samples = new List<Sample>();
     public GameObject sampleUI;
@@ -27,38 +29,64 @@ public class Sampler : MonoBehaviour
     public List<Vector3> samplePoints = new List<Vector3>();
     public List<Vector3> missedPoints = new List<Vector3>();
 
+
+    private TMP_Dropdown dropdown;
+    private GameObject startProcess;
+
+
     private GameObject cannot;
+    private GameObject later;
     private GameObject start;
+    private GameObject end;
     public GameObject indicator;
-    public TMP_Text location;
-    public TMP_Text progress;
+    private TMP_Text location;
+    private TMP_Text progress;
+    private TMP_Text compass;
     private int coveredLocations = 0;
     private int totalLocations = 0;
     private string fileName;
+    private List<string> possibleSets = new List<string>();
 
     public void Start() {
+        dropdown = sampleUI.transform.Find("Setup/Dropdown").GetComponent<TMP_Dropdown>();
+        
+        possibleSets = Utilities.FindTopLevelGameObjectNamesByPattern("SampleSet.*");
+        dropdown.ClearOptions();
+        dropdown.AddOptions(possibleSets);
+        dropdown.onValueChanged.AddListener(SelectSet);
+        
+
+
+        startProcess = sampleUI.transform.Find("Setup/start").gameObject;
+        startProcess.GetComponent<Button>().onClick.AddListener(StartSampling);
+
         start = sampleUI.transform.Find("Panel/start").gameObject;
         start.GetComponent<Button>().onClick.AddListener(takeMeasurement);
+
+        later = sampleUI.transform.Find("Panel/later").gameObject;
+        later.GetComponent<Button>().onClick.AddListener(addToEnd);
 
         cannot = sampleUI.transform.Find("Panel/cannot").gameObject;
         cannot.GetComponent<Button>().onClick.AddListener(cannotReach);
 
+        sampleUI.transform.Find("Panel/recenter").gameObject.GetComponent<Button>().onClick.AddListener(delegate () {
+            cameraController.moveTo(samplePoints[0], 0.5f);
+        });
+
+
         location = sampleUI.transform.Find("Panel/location").GetComponent<TMP_Text>();
         progress = sampleUI.transform.Find("Panel/progress").GetComponent<TMP_Text>();
-
+        compass = sampleUI.transform.Find("Panel/compass").GetComponent<TMP_Text>();
     }
 
-    public void Test() {
-        GameObject a = GameObject.Find("A");
-        GameObject b = GameObject.Find("B");
-        print(Utilities.CalculateObstacleThickness(a.transform.position, b.transform.position, "Wall, Floor"));
+    private void SelectSet(int index) {
+        VisualLogger.Log($"Select set {possibleSets[index]}");
+        customSampleSet = GameObject.Find(possibleSets[index]);
     }
 
-    private void print(string s) {
-        Debug.Log("Sampler: " + s);
-    }
     public void StartSampling() {
-        print("Start sampling");
+        VisualLogger.Log($"Start sampling for set {customSampleSet.name}");
+        sampleUI.transform.Find("Setup").gameObject.SetActive(false);
         wifiManager.scanComplete.AddListener(onScanComplete);
 
      
@@ -69,6 +97,9 @@ public class Sampler : MonoBehaviour
                 break;
             case SamplingMethod.Random:
                 fileName += $"-random{randomSampleAmount}.csv";
+                break;
+            case SamplingMethod.Custom:
+                fileName += $"-custom{customSampleSet.name}.csv";
                 break;
             default:
                 fileName += ".csv";
@@ -106,33 +137,50 @@ public class Sampler : MonoBehaviour
         coveredLocations++;
 
         location.text = "Location" + coveredLocations + "/" + totalLocations;
-        progress.text = "Sample 0/" + wifiSampleAmount;
+        progress.text = "Sample 0/" + wifiSampleAmount*4;
     }
 
     private void cannotReach() {
         samplePoints.RemoveAt(0);
+        coveredLocations--;
+        totalLocations--;
         preprareMeasurement(samplePoints[0]);
+        VisualLogger.Log("Removed point");
+    }
+
+    private void addToEnd() {
+        Vector3 temp = samplePoints[0];
+        samplePoints.RemoveAt(0);
+        samplePoints.Add(temp);
+        coveredLocations--;
+        preprareMeasurement(samplePoints[0]);
+        VisualLogger.Log("Moved point to end");
     }
 
     public void OnDrawGizmos() {
 
 
 
-        foreach(Vector3 pos in samplePoints) {
-            Gizmos.DrawSphere(pos, 1);
-        }
+        // foreach(Vector3 pos in samplePoints) {
+        //     Gizmos.DrawSphere(pos, 1);
+        // }
         
-        Gizmos.color = Color.red;
+        // Gizmos.color = Color.red;
 
-        foreach(Vector3 pos in missedPoints) {
-            Gizmos.DrawSphere(pos, 1);
+        // foreach(Vector3 pos in missedPoints) {
+        //     Gizmos.DrawSphere(pos, 1);
+        // }
+
+        // Gizmos.color = Color.green; // Set the color of the Gizmos
+        // Gizmos.DrawWireCube(bounds.center, bounds.size);
+
+        for(int i = 0; i < samplePoints.Count-1; i++) {
+            Gizmos.DrawLine(samplePoints[i], samplePoints[i+1]);
         }
-
-        Gizmos.color = Color.green; // Set the color of the Gizmos
-        Gizmos.DrawWireCube(bounds.center, bounds.size);
     }
 
     public void generateSampleLocations(){
+        Utilities.DisableTopLevelMatchingPattern("SampleSet.*");
         switch(samplingMethod){
             case SamplingMethod.Grid:
                 sampleGrid();
@@ -140,24 +188,48 @@ public class Sampler : MonoBehaviour
             case SamplingMethod.Random:
                 sampleRandom();
                 break;
+            case SamplingMethod.Custom:
+                sampleCustom();
+                break;
         }
     }
 
     public List<string> intermediate = new List<string>();
 
     public void takeMeasurement() {
+        VisualLogger.Log("Started wifi scan");
+        Handheld.Vibrate();
+        start.GetComponentInChildren<TMP_Text>().text = "Scanning...";
+
 
         wifiManager.startScan();
     }
 
     public void onScanComplete(string result) {
-        print("Scan complete: " + result);
-
+        VisualLogger.Log("Wifi scan complete");
         intermediate.Add(result);
 
-        sampleUI.transform.Find("Panel/progress").GetComponent<TMP_Text>().text = "Sample " + intermediate.Count + "/" + wifiSampleAmount;
+        sampleUI.transform.Find("Panel/progress").GetComponent<TMP_Text>().text = "Sample " + intermediate.Count + "/" + wifiSampleAmount*4;
 
-        if(intermediate.Count >= wifiSampleAmount) {
+        if(intermediate.Count % wifiSampleAmount == 0) {
+            Handheld.Vibrate();
+        }
+
+        if(intermediate.Count == wifiSampleAmount) {
+            compass.text = "Orient to East";
+            start.GetComponentInChildren<TMP_Text>().text = "Resume scan";
+        }
+        else if(intermediate.Count == wifiSampleAmount * 2) {
+            compass.text = "Orient to South";
+            start.GetComponentInChildren<TMP_Text>().text = "Resume scan";
+        }
+        else if(intermediate.Count == wifiSampleAmount * 3) {
+            compass.text = "Orient to West";
+            start.GetComponentInChildren<TMP_Text>().text = "Resume scan";
+        }
+        else if(intermediate.Count >= wifiSampleAmount * 4) {
+            compass.text = "Orient to North";
+            start.GetComponentInChildren<TMP_Text>().text = "Start";
             processMeasurements();
         } else {
             wifiManager.startScan();
@@ -180,13 +252,18 @@ public class Sampler : MonoBehaviour
         intermediate.Clear();
 
         if(samplePoints.Count > 2) {
+            GameObject past = Instantiate(indicator);
+            past.GetComponent<MeshRenderer>().material.color = Color.green;
+            
             samplePoints.RemoveAt(0);
             preprareMeasurement(samplePoints[0]);
         } else {
             samplePoints.Clear();
             start.GetComponent<Button>().enabled = false;
         }
-        saveToCSV(samples, fileName);
+
+        int length = saveToCSV(samples, fileName);
+        VisualLogger.Log($"Saved {length} characters to {fileName}");
     }
 
     private void sampleGrid() {
@@ -230,12 +307,19 @@ public class Sampler : MonoBehaviour
         }
     }
 
+    private void sampleCustom() {
+        var sorted = Utilities.SortGameObjects(Utilities.GetAllChildren(customSampleSet));
+        foreach(GameObject item in sorted) {
+            samplePoints.Add(item.transform.position);
+        }
+    }
+
     private bool isPointOnNavMesh(Vector3 point) {
         NavMeshHit hit;
         return NavMesh.SamplePosition(point, out hit,0.1f, NavMesh.AllAreas);
     }
 
-    public static void saveToCSV(List<Sample> samples, string fileName) {
+    public static int saveToCSV(List<Sample> samples, string fileName) {
         string outputCsv = ProcessSamples("Data/AP-MAC", samples);
 
         string path = Path.Combine(Application.persistentDataPath, fileName);
@@ -243,7 +327,11 @@ public class Sampler : MonoBehaviour
         Directory.CreateDirectory(Path.GetDirectoryName(path));
 
         File.WriteAllText(path, outputCsv);
+
+        return outputCsv.Length;
     }
+
+
 
     public static string ProcessSamples(string apCsvContent, List<Sample> samples)
     {
@@ -311,7 +399,8 @@ public class Sampler : MonoBehaviour
 
 public enum SamplingMethod {
     Random,
-    Grid
+    Grid,
+    Custom
 }
 
 [System.Serializable]
