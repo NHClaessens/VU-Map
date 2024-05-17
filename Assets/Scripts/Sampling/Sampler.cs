@@ -89,9 +89,6 @@ public class Sampler : MonoBehaviour
         sampleUI.transform.Find("Setup").gameObject.SetActive(false);
         wifiManager.scanComplete.AddListener(onScanComplete);
 
-        Utilities.AcquireWakeLock();
-
-     
         fileName = $"{System.DateTime.Now:yyyyMMdd_HHmmss}-wifi{wifiSampleAmount}";
         switch(samplingMethod) {
             case SamplingMethod.Grid:
