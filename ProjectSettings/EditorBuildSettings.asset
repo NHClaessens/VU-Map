@@ -9,7 +9,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Sampling.unity
     guid: fa3745794745f6e43a29f0a53ead8114
   - enabled: 0
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/Navigation.unity
     guid: c850ee8c3b14cc8459e7e186857cf567
   m_configObjects:
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: e8091037681d14e0e94501afd2dda43d,
