@@ -76,3 +76,5 @@ Library/Bee/Android/Prj/Mono2x/Gradle/unityLibrary/src/main/assets/bin/Data/data
 Library/Bee/Android/Prj/Mono2x/Gradle/launcher/build/intermediates/assets/debug/mergeDebugAssets/bin/Data/data.unity3d
 Library/Bee/Android/Prj/Mono2x/Gradle/launcher/build/intermediates/compressed_assets/debug/out/assets/bin/Data/data.unity3d.jar
 Library/ArtifactDB
+
+/.plastic
