@@ -1,4 +1,0 @@
-repository "VU map@VU_Map@cloud"
-  path "/"
-    br "/main"
-    co "/main"
