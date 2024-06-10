@@ -2,34 +2,35 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Events;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
-public class NavigationController : Singleton<NavigationController>
+public class NavigationController : MonoBehaviour
 {
     public Vector3 destination;
     public float turnDistanceThreshold = 1.5f;
     public float subCornerThreshold = 0.5f;
     public float maxDistThreshold = 5f;
+    public CameraController cameraController;
     public List<Instruction> allInstructions;
     public List<Instruction> instructions;
-    public NavUIConfig navUI;
+    public GameObject navUI;
     public UnityEvent<List<Instruction>> navigationUpdated = new UnityEvent<List<Instruction>>();
 
     private LineRenderer line;
     private int wayPointIndex = 0;
     private bool inWayPointRange = false;
     public Vector3[] waypoints;
-
-    // Start is called before the first frame update
-    public NavigationController() : base()
+        
+    public void Awake()
     {
         line = GameObject.Find("Path").GetComponent<LineRenderer>();
-        PositionController.Instance.positionUpdated.AddListener(LocationUpdated);
+        LocationController.locationChanged.AddListener(LocationUpdated);
 
-        navUI = GameObject.Find("NavUI").GetComponent<NavUIConfig>();
+        navUI = GameObject.Find("NavUI");
     }
 
     // Update is called once per frame
@@ -46,14 +47,27 @@ public class NavigationController : Singleton<NavigationController>
         destination = dest;
 
         NavMeshPath path = new NavMeshPath();
-        bool possible = NavMesh.CalculatePath(PositionController.Instance.position, destination, NavMesh.AllAreas, path);
+        NavMeshHit hit;
+        bool valid = NavMesh.SamplePosition(dest, out hit, 1, NavMesh.AllAreas);
 
-        if(!possible) return;
+        if(!valid) {
+            Debug.LogError($"Position ${dest} is not reachable");
+            return;
+        }
+
+        bool possible = NavMesh.CalculatePath(LocationController.location, hit.position, NavMesh.AllAreas, path);
+
+        if(!possible) {
+            Debug.LogError($"Cannot navigate from {LocationController.location} to {hit.position}");
+            return;
+        }
 
         waypoints = CleanPath(path.corners).ToArray();
         DrawPath(waypoints);
         List<Instruction> instructions = GenerateInstructionTypes(waypoints);
         navigationUpdated.Invoke(instructions);
+
+        BuildInstructions(instructions);
     }
     
     void checkDistToPath() {
@@ -61,7 +75,7 @@ public class NavigationController : Singleton<NavigationController>
         Vector3 destination = waypoints[wayPointIndex];
         Ray path = new Ray(origin, destination - origin);
 
-        float distance = Vector3.Cross(path.direction, PositionController.Instance.position - path.origin).magnitude;
+        float distance = Vector3.Cross(path.direction, LocationController.location - path.origin).magnitude;
 
         if(distance > maxDistThreshold) {
             Debug.Log("Left route, recalculating");
@@ -181,8 +195,8 @@ public class NavigationController : Singleton<NavigationController>
             }
         }
 
-        navUI.ScrollToInstruction(index);
-        navUI.SetDistance(Vector3.Distance(currentPosition, waypoints[index+1]));
+        ScrollToInstruction(index);
+        SetDistance(Vector3.Distance(currentPosition, waypoints[index+1]));
 
         return closestPoint;
     }
@@ -194,6 +208,97 @@ public class NavigationController : Singleton<NavigationController>
         t = Mathf.Clamp01(t);
         return start + t * segment;
     }
+
+    public GameObject instructionTemplate;
+    public GameObject instructionContainer;
+    public ScrollRect instructionList;
+    public float snapSpeed = 1;
+
+    private List<GameObject> children = new List<GameObject>();
+    private Coroutine smoothSnapCoroutine = null;
+    private int scrollIndex = 0;
+
+    private void BuildInstructions(List<Instruction> instructions) {
+        children.Clear();
+        Utilities.DeleteAllChildren(instructionContainer);
+
+        Debug.Log(instructions.Count);
+
+        for(int i = 0; i < instructions.Count; i++) {
+            Instruction instruction = instructions[i];
+            GameObject clone = Instantiate(instructionTemplate);
+            clone.transform.SetParent(instructionContainer.transform);
+
+
+            clone.transform.Find("Current/Title").GetComponent<TMP_Text>().text = instruction.toString();
+
+            clone.transform.Find("Current/Distance").GetComponent<TMP_Text>().text = DistToString(instruction.distance);
+
+            Texture2D texture = instruction.getIcon();
+            clone.transform.Find("Current/Icon").GetComponent<Image>().sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2());
+            if(i < instructions.Count - 1) {
+                Instruction nextInstruction = instructions[i+1];
+
+                Texture2D nextTexture = nextInstruction.getIcon();
+                clone.transform.Find("Next/Icon").GetComponent<Image>().sprite = Sprite.Create(nextTexture, new Rect(0, 0, nextTexture.width, nextTexture.height), new Vector2());
+            } else {
+                clone.transform.Find("Next").gameObject.SetActive(false);
+            }
+
+            RectTransform rectTransform = clone.GetComponent<RectTransform>();
+
+            clone.SetActive(true);
+
+
+
+            children.Add(clone);
+        }
+    }
+
+    public void SnapAlign() {
+        if(smoothSnapCoroutine != null) {
+            StopCoroutine(smoothSnapCoroutine);
+        }
+
+        float scrollAmount = 1 / (children.Count - 1f);
+        int itemsPast = (int) Math.Floor(instructionList.horizontalNormalizedPosition / scrollAmount);
+        float remainder = instructionList.horizontalNormalizedPosition % scrollAmount;
+
+        if(remainder >= scrollAmount / 2) itemsPast ++;
+
+        Debug.Log($"Snap to {itemsPast}");
+        
+        scrollIndex = itemsPast;
+        smoothSnapCoroutine = StartCoroutine(SmoothSnap(itemsPast / (children.Count - 1f)));
+        cameraController.moveTo(waypoints[scrollIndex], 0.5f);
+    }
+
+    public void ScrollToInstructionOffset(int offset) {
+        ScrollToInstruction(scrollIndex + offset);
+    }
+    public void ScrollToInstruction(int index) {
+        index = Mathf.Clamp(index, 0, children.Count - 1);
+        scrollIndex = index;
+        smoothSnapCoroutine = StartCoroutine(SmoothSnap(index / (children.Count - 1f)));
+    }
+   
+    private IEnumerator SmoothSnap(float destination) {
+        Debug.Log($"Snap to {destination}");
+        while(instructionList.horizontalNormalizedPosition != destination) {
+            instructionList.horizontalNormalizedPosition =   Mathf.MoveTowards(instructionList.horizontalNormalizedPosition, destination, snapSpeed * Time.deltaTime);
+            yield return null;
+        }
+    }
+
+    public void SetDistance(float distance) {
+        GameObject el = instructionList.GetComponent<RectTransform>().GetChild(scrollIndex).gameObject;
+        el.transform.Find("Current/Distance").GetComponent<TMP_Text>().text = DistToString(distance);
+    }
+
+    private string DistToString(float distance) {
+        return Mathf.FloorToInt(distance).ToString() + " m";
+    }
+
 }
 
 [System.Serializable]

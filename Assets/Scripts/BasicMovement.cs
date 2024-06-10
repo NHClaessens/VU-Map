@@ -17,7 +17,7 @@ public class BasicMovement : MonoBehaviour
 
         Vector3 movement = new Vector3(horizontalInput, 0f, verticalInput);
         if(movement.magnitude > 0) {
-            PositionController.Instance.position += movement * speed * Time.deltaTime;
+            LocationController.location += movement * speed * Time.deltaTime;
         }
     }
 

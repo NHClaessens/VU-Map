@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using System.Net.Http;
-using Unity.Plastic.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using UnityEngine.AI;
 using System.Net.Sockets;
@@ -9,7 +9,7 @@ using System;
 using System.Text;
 using System.Threading;
 using Unity.VisualScripting;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Linq;
 

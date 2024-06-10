@@ -1,17 +1,15 @@
-using System;
-using System.Collections;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
-using Unity.Plastic.Newtonsoft.Json;
-using Unity.Plastic.Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public static class API
 {
     public static string baseUrl = "http://127.0.0.1:5000";
 
-    public static async Task<JObject> Get(string endpoint)
+    public static async Task<JToken> Get(string endpoint)
     {
         string url = $"{baseUrl}/{endpoint}";
 
@@ -32,7 +30,7 @@ public static class API
             else
             {
                 var jsonResponse = webRequest.downloadHandler.text;
-                var responseObject = JObject.Parse(jsonResponse);
+                var responseObject = JToken.Parse(jsonResponse);
                 return responseObject;
             }
         }

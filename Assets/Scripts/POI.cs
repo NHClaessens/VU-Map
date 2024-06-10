@@ -7,6 +7,7 @@ public class POI : MonoBehaviour
     public string title;
     public string description;
     public string[] tags;
+    public int floor;
     public float maxZoomLevel;
 
     private bool forceVisible;

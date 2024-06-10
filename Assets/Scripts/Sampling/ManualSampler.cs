@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -42,7 +43,7 @@ public class ManualSampler : MonoBehaviour {
 
         fileName = $"{DateTime.Now:yyyyMMdd_HHmmss}-wifi{wifiSampleAmount}-custom.csv";
         
-        wifiManager.scanComplete.AddListener(ScanComplete);
+        WifiManager.scanComplete.AddListener(ScanComplete);
     }
 
     public void TakeSample() {
@@ -51,19 +52,19 @@ public class ManualSampler : MonoBehaviour {
         loc.name = $"sample-{samples.Count / wifiSampleAmount}";
         loc.GetComponent<MeshRenderer>().material.color = Color.green;
 
-        wifiManager.startScan();
+        WifiManager.startScan();
     }
 
     private List<string> intermediate = new List<string>();
-    public void ScanComplete(string result) {
-        intermediate.Add(result);
+    public void ScanComplete(JToken result) {
+        intermediate.Add(result.ToString());
 
         
 
         if(intermediate.Count >= wifiSampleAmount) {
             processMeasurements();
         } else {
-            wifiManager.startScan();
+            WifiManager.startScan();
         }
         progress.GetComponent<TMP_Text>().text = $"Locations: {samples.Count / wifiSampleAmount}\nMeasurements: {intermediate.Count}/{wifiSampleAmount}";
     }

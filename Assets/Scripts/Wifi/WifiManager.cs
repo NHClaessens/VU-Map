@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Android;
@@ -9,9 +10,10 @@ using UnityEngine.Events;
 public class WifiManager : MonoBehaviour
 {
     public GameObject text;
-    public UnityEvent<string> scanComplete = new UnityEvent<string>();
-    private AndroidJavaObject wifiManager;
-    private AndroidJavaObject instance;
+    public static bool available = Application.platform == RuntimePlatform.Android;
+    public static UnityEvent<JToken> scanComplete = new UnityEvent<JToken>();
+    private static AndroidJavaObject wifiManager;
+    private static AndroidJavaObject instance;
 
     void Start() {
         if(Application.platform != RuntimePlatform.Android) {
@@ -35,17 +37,17 @@ public class WifiManager : MonoBehaviour
             wifiManager.Call("unRegisterReceiver", instance);
     }
 
-    public void startScan() {
+    public static void startScan() {
         if(wifiManager != null) {
             Debug.Log("Manager starting scan");
             wifiManager.Call("startScan", instance);
         } else {
-            scanComplete.Invoke("{}");
+            scanComplete.Invoke(JToken.Parse("{}"));
         }
     }
 
     public void onScanComplete(string result) {
-        scanComplete.Invoke(result);
+        scanComplete.Invoke(JToken.Parse(result));
     }
 
     public void onScanFailed(string result) {
