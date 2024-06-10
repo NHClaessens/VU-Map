@@ -22,6 +22,7 @@ public class Enricher : MonoBehaviour {
     };
     public SerializableDictionary<string, SerializableList<string>> results = new SerializableDictionary<string, SerializableList<string>>();
     public TextAsset file;
+    public string fileName;
     public string[] layerNames;
     public List<string> APs = new List<string>();
     public List<Vector3> sampleLocations = new List<Vector3>();
@@ -114,19 +115,24 @@ public class Enricher : MonoBehaviour {
         }
 
         foreach((string AP, (Ray forward, float forwardDistance), (Ray backward, float backwardDistance)) in rayList) {
-            RaycastHit[] forwardHits = Physics.RaycastAll(forward.origin, forward.direction, forwardDistance);
-            RaycastHit[] backwardHits = Physics.RaycastAll(backward.origin, backward.direction, backwardDistance);
+            // RaycastHit[] forwardHits = Physics.RaycastAll(forward.origin, forward.direction, forwardDistance);
+            // RaycastHit[] backwardHits = Physics.RaycastAll(backward.origin, backward.direction, backwardDistance);
 
-            bool obstaclePresent = forwardHits.Length > 0;
-            int obstacleCount = forwardHits.Length;
-            float obstacleThickness = Utilities.CalculateObstacleThickness(forward.origin, forwardHits, backwardHits);
+            // bool obstaclePresent = forwardHits.Length > 0;
+            // int obstacleCount = forwardHits.Length;
+            // float obstacleThickness = Utilities.CalculateObstacleThickness(forward.origin, forwardHits, backwardHits);
+            float distance = Vector3.Distance(forward.origin, backward.origin);
 
             // Debug.Log($"From {forward.origin} to {backward.origin} = {AP}, present: {obstaclePresent}, count: {obstacleCount}, thick: {obstacleThickness}");
 
             for(int i = 0; i < 60; i++) {
-                AddToResults(AP+"_obstacle_present", obstaclePresent ? "1" : "0");
-                AddToResults(AP+"_obstacle_count", obstacleCount.ToString());
-                AddToResults(AP+"_obstacle_thickness", obstacleThickness.ToString(culture));
+                // AddToResults(AP+"_obstacle_present", obstaclePresent ? "1" : "0");
+                // AddToResults(AP+"_obstacle_count", obstacleCount.ToString());
+                // AddToResults(AP+"_obstacle_thickness", obstacleThickness.ToString(culture));
+                AddToResults(AP+"_distance", distance.ToString(culture));
+                AddToResults(AP+"_x", backward.origin.x.ToString(culture));
+                AddToResults(AP+"_y", backward.origin.y.ToString(culture));
+                AddToResults(AP+"_z", backward.origin.z.ToString(culture));
             }
 
         }
@@ -187,7 +193,7 @@ public class Enricher : MonoBehaviour {
             if(value) opt += "-" + key;
         }
 
-        Utilities.SaveToFile(csv, $"{file.name}{opt}.csv");
+        Utilities.SaveToFile(csv, fileName ?? $"{file.name}{opt}.csv");
     }
 
 }
