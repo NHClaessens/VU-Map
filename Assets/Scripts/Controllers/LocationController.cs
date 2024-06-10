@@ -12,8 +12,6 @@ public class LocationController : MonoBehaviour
     public static string selectedEndpoint = "predict/default";
     public static UnityEvent<Vector3> locationChanged = new UnityEvent<Vector3>();
     public static Vector3 location;
-    public GameObject indicator;
-
 
     private Coroutine scanning;
 
@@ -42,7 +40,7 @@ public class LocationController : MonoBehaviour
         transform.position = position;
         location = position;
         locationChanged.Invoke(position);
-        indicator.transform.position = position;
+        transform.position = position;
     }
 
     private IEnumerator WifiScanning() {
