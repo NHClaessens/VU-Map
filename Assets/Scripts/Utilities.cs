@@ -24,6 +24,39 @@ public class Utilities : MonoBehaviour
         return hits;
     }
 
+    public static List<float> ApObstacles(List<GameObject> APs, Vector3 from) {
+        List<float> results = new List<float>();
+        foreach(GameObject AP in APs) {
+            results.Add(CalculateObstacleThickness(from, AP.transform.position));
+            // Debug.Log("Completed AP " + AP.name);
+        }
+
+        return results;
+    }
+
+        
+
+    public static List<GameObject> GetAllBottomLevelGameObjects(GameObject root)
+    {
+        List<GameObject> bottomLevelGameObjects = new List<GameObject>();
+        FindBottomLevelGameObjects(root, bottomLevelGameObjects);
+        return bottomLevelGameObjects;
+    }
+    private static void FindBottomLevelGameObjects(GameObject current, List<GameObject> bottomLevelGameObjects)
+    {
+        if (current.transform.childCount == 0)
+        {
+            bottomLevelGameObjects.Add(current);
+        }
+        else
+        {
+            foreach (Transform child in current.transform)
+            {
+                FindBottomLevelGameObjects(child.gameObject, bottomLevelGameObjects);
+            }
+        }
+    }
+
     public static float CalculateObstacleThickness(Vector3 start, RaycastHit[] forwardHits, RaycastHit[] reverseHits) {
         List<(RaycastHit, string)> allHits = new List<(RaycastHit, string)>();
         // forwardHits.CopyTo(allHits, 0);
@@ -451,4 +484,5 @@ public class Utilities : MonoBehaviour
 
         return result;
     }
+
 }
