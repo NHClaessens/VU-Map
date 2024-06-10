@@ -31,6 +31,8 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if(transform.position.y != 100) transform.position = new Vector3(transform.position.x, 100, transform.position.z);
+        
         if(IsMouseOverUIElement()) {
             return;
         }

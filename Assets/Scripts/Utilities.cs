@@ -485,4 +485,12 @@ public class Utilities : MonoBehaviour
         return result;
     }
 
+    public static void DeleteAllChildren(GameObject parent)
+    {
+        foreach (Transform child in parent.transform)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
 }

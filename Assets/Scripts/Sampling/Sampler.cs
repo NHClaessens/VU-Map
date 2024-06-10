@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System.Text;
 using System.IO;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 public class Sampler : MonoBehaviour
 {
@@ -87,7 +88,7 @@ public class Sampler : MonoBehaviour
     public void StartSampling() {
         VisualLogger.Log($"Start sampling for set {customSampleSet.name}");
         sampleUI.transform.Find("Setup").gameObject.SetActive(false);
-        wifiManager.scanComplete.AddListener(onScanComplete);
+        WifiManager.scanComplete.AddListener(onScanComplete);
 
         fileName = $"{System.DateTime.Now:yyyyMMdd_HHmmss}-wifi{wifiSampleAmount}";
         switch(samplingMethod) {
@@ -201,12 +202,12 @@ public class Sampler : MonoBehaviour
         start.GetComponentInChildren<TMP_Text>().text = "Scanning...";
 
 
-        wifiManager.startScan();
+        WifiManager.startScan();
     }
 
-    public void onScanComplete(string result) {
+    public void onScanComplete(JToken result) {
         VisualLogger.Log("Wifi scan complete");
-        intermediate.Add(result);
+        intermediate.Add(result.ToString());
 
         sampleUI.transform.Find("Panel/progress").GetComponent<TMP_Text>().text = "Sample " + intermediate.Count + "/" + wifiSampleAmount*4;
 
@@ -231,7 +232,7 @@ public class Sampler : MonoBehaviour
             start.GetComponentInChildren<TMP_Text>().text = "Start";
             processMeasurements();
         } else {
-            wifiManager.startScan();
+            WifiManager.startScan();
         }
     }
 
