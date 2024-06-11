@@ -31,7 +31,7 @@ public class CameraController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(transform.position.y != 100) transform.position = new Vector3(transform.position.x, 100, transform.position.z);
+        if(transform.position.y != 999) transform.position = new Vector3(transform.position.x, 999, transform.position.z);
         
         if(IsMouseOverUIElement()) {
             return;
@@ -75,6 +75,7 @@ public class CameraController : MonoBehaviour
     }
 
     public void moveTo(Vector3 pos, float duration) {
+        Debug.Log($"Move camera to {pos}");
         if(moveRoutine != null) {
             StopCoroutine(moveRoutine);
         }

@@ -493,4 +493,20 @@ public class Utilities : MonoBehaviour
         }
     }
 
+    public static int HeightToFloor(float height) {
+        if(height > 46.8) return 12;
+        else if(height > 43.15) return 11;
+        else if(height > 39.4) return 10;
+        else if(height > 35.7) return 9;
+        else if(height > 32) return 8;
+        else if(height > 27.7) return 7;
+        else if(height > 28.3) return 6;
+        else if(height > 20.6) return 5;
+        else if(height > 16.7) return 4;
+        else if(height > 12.8) return 3;
+        else if(height > 8.9) return 2;
+        else if(height > 4.4) return 1;
+        else return 0;
+    }
+
 }

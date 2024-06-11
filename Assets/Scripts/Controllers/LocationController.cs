@@ -41,6 +41,8 @@ public class LocationController : MonoBehaviour
         location = position;
         locationChanged.Invoke(position);
         transform.position = position;
+
+        FloorController.SelectFloor(Utilities.HeightToFloor(position.y));
     }
 
     private IEnumerator WifiScanning() {

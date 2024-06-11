@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class SettingsController : MonoBehaviour
 {
@@ -35,5 +36,9 @@ public class SettingsController : MonoBehaviour
 
     public void SelectEndpoint(int index) {
         LocationController.selectedEndpoint = endpoints[index]["endpoint"].ToString();
+    }
+
+    public void GoToSampling() {
+        SceneManager.LoadScene("Sampling");
     }
 }

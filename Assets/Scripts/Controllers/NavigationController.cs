@@ -99,7 +99,6 @@ public class NavigationController : MonoBehaviour
 
         for (int i = 1; i < path.Length-1; i++)
         {            
-            Debug.Log(path[i]);
             if (
                 Vector3.Distance(path[i], path[i + 1]) <= subCornerThreshold
                 && isAngleSameDirection(
@@ -195,7 +194,9 @@ public class NavigationController : MonoBehaviour
             }
         }
 
-        ScrollToInstruction(index);
+        if(index > scrollIndex) {
+            ScrollToInstruction(index);
+        }
         SetDistance(Vector3.Distance(currentPosition, waypoints[index+1]));
 
         return closestPoint;
@@ -222,8 +223,6 @@ public class NavigationController : MonoBehaviour
         children.Clear();
         Utilities.DeleteAllChildren(instructionContainer);
 
-        Debug.Log(instructions.Count);
-
         for(int i = 0; i < instructions.Count; i++) {
             Instruction instruction = instructions[i];
             GameObject clone = Instantiate(instructionTemplate);
@@ -245,11 +244,7 @@ public class NavigationController : MonoBehaviour
                 clone.transform.Find("Next").gameObject.SetActive(false);
             }
 
-            RectTransform rectTransform = clone.GetComponent<RectTransform>();
-
             clone.SetActive(true);
-
-
 
             children.Add(clone);
         }
@@ -266,11 +261,9 @@ public class NavigationController : MonoBehaviour
 
         if(remainder >= scrollAmount / 2) itemsPast ++;
 
-        Debug.Log($"Snap to {itemsPast}");
-        
         scrollIndex = itemsPast;
         smoothSnapCoroutine = StartCoroutine(SmoothSnap(itemsPast / (children.Count - 1f)));
-        cameraController.moveTo(waypoints[scrollIndex], 0.5f);
+        cameraController.moveTo(waypoints[scrollIndex + 1], 0.5f);
     }
 
     public void ScrollToInstructionOffset(int offset) {
@@ -283,7 +276,9 @@ public class NavigationController : MonoBehaviour
     }
    
     private IEnumerator SmoothSnap(float destination) {
-        Debug.Log($"Snap to {destination}");
+        if(destination < 0) destination = 0;
+        if(destination > 1) destination = 1;
+
         while(instructionList.horizontalNormalizedPosition != destination) {
             instructionList.horizontalNormalizedPosition =   Mathf.MoveTowards(instructionList.horizontalNormalizedPosition, destination, snapSpeed * Time.deltaTime);
             yield return null;
@@ -291,7 +286,7 @@ public class NavigationController : MonoBehaviour
     }
 
     public void SetDistance(float distance) {
-        GameObject el = instructionList.GetComponent<RectTransform>().GetChild(scrollIndex).gameObject;
+        GameObject el = instructionContainer.GetComponent<RectTransform>().GetChild(scrollIndex).gameObject;
         el.transform.Find("Current/Distance").GetComponent<TMP_Text>().text = DistToString(distance);
     }
 

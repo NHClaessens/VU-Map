@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 public static class API
 {
-    public static string baseUrl = "http://127.0.0.1:5000";
+    public static string baseUrl = "http://192.168.178.81:5000";
 
     public static async Task<JToken> Get(string endpoint)
     {

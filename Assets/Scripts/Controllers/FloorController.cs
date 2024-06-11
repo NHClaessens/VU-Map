@@ -12,7 +12,7 @@ public class FloorController : MonoBehaviour
 
     public static void SelectFloor(int num) {
         if(num < 0) num = 0;
-        if(num > 6) num = 6;
+        if(num > 12) num = 12;
         
         GameObject model = GameObject.Find("3D models");
 
