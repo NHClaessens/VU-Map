@@ -24,12 +24,17 @@ public class LocationController : MonoBehaviour
     }
 
     void OnDestroy() {
-        StopCoroutine(scanning);
+        if(scanning != null)
+            StopCoroutine(scanning);
     }
 
 
     private async void onScanComplete(JToken result) {
+        Debug.Log($"Wifi scan result {result}");
+
         JToken res = await API.Post(selectedEndpoint, result);
+
+        Debug.Log($"Server prediction {res}");
 
         Vector3 position = new Vector3(float.Parse(res["x"].ToString()), float.Parse(res["y"].ToString()), float.Parse(res["z"].ToString()));
 
@@ -37,10 +42,10 @@ public class LocationController : MonoBehaviour
         NavMesh.SamplePosition(position, out adjusted, 30, NavMesh.AllAreas);
         position = adjusted.position;
 
+        Debug.Log($"Adjusted prediction {position}");
         transform.position = position;
         location = position;
         locationChanged.Invoke(position);
-        transform.position = position;
 
         FloorController.SelectFloor(Utilities.HeightToFloor(position.y));
     }

@@ -9,7 +9,6 @@ using UnityEngine.Events;
 
 public class WifiManager : MonoBehaviour
 {
-    public GameObject text;
     public static bool available = Application.platform == RuntimePlatform.Android;
     public static UnityEvent<JToken> scanComplete = new UnityEvent<JToken>();
     private static AndroidJavaObject wifiManager;
