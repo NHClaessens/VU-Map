@@ -37,6 +37,7 @@ public class VisualLogger : MonoBehaviour
         bool bottom = rect.verticalNormalizedPosition <= 0.1f;
         
         AddLog($"{currentTime} : {message}");
+        Debug.Log($"{currentTime} : {message}");
 
         if(bottom) rect.verticalNormalizedPosition = 0;
     }

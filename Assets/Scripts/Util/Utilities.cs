@@ -500,12 +500,12 @@ public class Utilities : MonoBehaviour
         else if(height > 35.7) return 9;
         else if(height > 32) return 8;
         else if(height > 27.7) return 7;
-        else if(height > 28.3) return 6;
-        else if(height > 20.6) return 5;
-        else if(height > 16.7) return 4;
-        else if(height > 12.8) return 3;
-        else if(height > 8.9) return 2;
-        else if(height > 4.4) return 1;
+        else if(height > 24.6) return 6;
+        else if(height > 20.7) return 5;
+        else if(height > 16.8) return 4;
+        else if(height > 13) return 3;
+        else if(height > 9) return 2;
+        else if(height > 4.6) return 1;
         else return 0;
     }
 

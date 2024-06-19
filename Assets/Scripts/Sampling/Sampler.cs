@@ -86,7 +86,7 @@ public class Sampler : MonoBehaviour
     }
 
     public void StartSampling() {
-        VisualLogger.Log($"Start sampling for set {customSampleSet.name}");
+        VisualLogger.Log($"Start sampling for set {customSampleSet}");
         sampleUI.transform.Find("Setup").gameObject.SetActive(false);
         WifiManager.scanComplete.AddListener(onScanComplete);
 
