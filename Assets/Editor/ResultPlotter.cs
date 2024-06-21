@@ -80,6 +80,8 @@ public class ResultPlotterWindow : EditorWindow
         proximityThreshold = EditorGUILayout.FloatField(proximityThreshold);
         GUILayout.Label("Color threshold");
         colorDifferenceThreshold = EditorGUILayout.FloatField(colorDifferenceThreshold);
+        GUILayout.Label("Outline thickness");
+        outlineThickness = EditorGUILayout.FloatField(outlineThickness);
         GUILayout.Label("Height offset");
         heightOffset = EditorGUILayout.FloatField(heightOffset);
 
@@ -91,8 +93,6 @@ public class ResultPlotterWindow : EditorWindow
             if(circleOutline) {
                 GUILayout.Label("Outline segments");
                 numSegments = EditorGUILayout.IntField(numSegments);
-                GUILayout.Label("Outline thickness");
-                outlineThickness = EditorGUILayout.FloatField(outlineThickness);
             }
         }
 
@@ -264,26 +264,34 @@ public class ResultPlotterWindow : EditorWindow
             Vector3 realLocation = entry.Key;
             List<Vector3> predictedLocations = entry.Value;
 
-            Material pointMaterial = new Material(Shader.Find("Custom/AlwaysOnTopWithOutline"));
+            Material lineMaterial = new Material(Shader.Find("Custom/AlwaysOnTop")) {
+                renderQueue = 3000
+            };
+            Material alwaysOnTop = new Material(Shader.Find("Custom/AlwaysOnTop")) {
+                renderQueue = 3004
+            };
+            Material alwaysOnTop2 = new Material(Shader.Find("Custom/AlwaysOnTop")){
+                renderQueue = 3002
+            };
+
 
             // Create a point for the real location
             GameObject point = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             point.transform.position = realLocation;
             point.transform.localScale = new Vector3(actualSize, actualSize, actualSize);
-            point.GetComponent<Renderer>().material = pointMaterial;
+            point.GetComponent<Renderer>().material = alwaysOnTop;
             AddToFloor(point);
-            // point.transform.parent = parent.transform;
+            AddOutline(point, actualSize + outlineThickness, 3003);
 
-            Material material = new Material(Shader.Find("Custom/AlwaysOnTopWithOutline"));
-            material.SetFloat("_Outline", 0.1f);
-            Material lineMaterial = new Material(Shader.Find("Custom/AlwaysOnTop"));
 
             foreach(Vector3 pred in predictedLocations) {
                 GameObject p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 p.transform.position = pred;
                 p.transform.localScale = new Vector3(predictedSize, predictedSize, predictedSize);
-                p.GetComponent<Renderer>().material = material;
+                p.GetComponent<Renderer>().material = alwaysOnTop2;
                 p.transform.parent = point.transform;
+
+                AddOutline(p, predictedSize + outlineThickness, 3001);            
 
                 LineRenderer renderer = p.AddComponent<LineRenderer>();
                 renderer.positionCount = 2;
@@ -318,6 +326,20 @@ public class ResultPlotterWindow : EditorWindow
         }
 
         obj.transform.parent = parent.transform;
+    }
+
+
+    void AddOutline(GameObject obj, float thickness, int outlineQueue = 3000) {
+        Material outlineShader = new Material(Shader.Find("Custom/AlwaysOnTop")){
+            color = Color.white,
+            renderQueue = outlineQueue
+        };
+        
+        GameObject outline = Instantiate(obj);
+        outline.transform.localScale = new Vector3(thickness, thickness, thickness);
+        outline.transform.parent = obj.transform;
+        outline.transform.localPosition = Vector3.zero;
+        outline.GetComponent<MeshRenderer>().material = outlineShader;
     }
 
     GameObject GetParent() {
@@ -370,7 +392,7 @@ public class ResultPlotterWindow : EditorWindow
             int tries = 0;
             do
             {
-                newColor = Random.ColorHSV();
+                newColor = Random.ColorHSV(0f, 1f, 0.2f, 1f, 0.5f, 1f);
                 isColorAcceptable = true;
 
                 foreach (Transform otherObj in objects)
@@ -398,7 +420,8 @@ public class ResultPlotterWindow : EditorWindow
             objectColors[obj] = newColor;
 
             foreach(MeshRenderer renderer in obj.GetComponentsInChildren<MeshRenderer>()) {
-                renderer.sharedMaterial.color = newColor;
+                if(renderer.gameObject.name != "Sphere(Clone)")
+                    renderer.sharedMaterial.color = newColor;
             }
 
             foreach(LineRenderer renderer in obj.GetComponentsInChildren<LineRenderer>()) {
@@ -448,7 +471,7 @@ public class ResultPlotterWindow : EditorWindow
         byte[] bytes = screenshot.EncodeToPNG();
 
 
-        File.WriteAllBytes(Application.dataPath + $"/../{ssName}".ToString() + "_" + Random.Range(0, 1024).ToString() + ".png", bytes);
+        File.WriteAllBytes(Application.dataPath + $"/../{ssName}".ToString() + ".png", bytes);
 
         Debug.Log($"Screenshot saved");
     }
