@@ -509,4 +509,38 @@ public class Utilities : MonoBehaviour
         else return 0;
     }
 
+    public static void TakeScreenshot(string name)
+    {
+        // Set up the RenderTexture
+        Camera screenshotCamera = GameObject.Find("Screenshot Camera").GetComponent<Camera>();
+        int width = 7300;//6500;
+        int height = 7300;
+        RenderTexture renderTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+        screenshotCamera.targetTexture = renderTexture;
+        screenshotCamera.clearFlags = CameraClearFlags.SolidColor;
+        screenshotCamera.backgroundColor = new Color(0, 0, 0, 0); // Transparent background
+
+        // Render the camera
+        screenshotCamera.Render();
+
+        // Read pixels from the RenderTexture
+        RenderTexture.active = renderTexture;
+        Texture2D screenshot = new Texture2D(width, height, TextureFormat.ARGB32, false);
+        screenshot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        screenshot.Apply();
+
+        // Reset the RenderTexture and active texture
+        screenshotCamera.targetTexture = null;
+        RenderTexture.active = null;
+        Destroy(renderTexture);
+
+        // Save the texture to a PNG file
+        byte[] bytes = screenshot.EncodeToPNG();
+
+
+        File.WriteAllBytes(Application.dataPath + $"/../{name}".ToString() + ".png", bytes);
+
+        Debug.Log($"Screenshot saved");
+    }
+
 }

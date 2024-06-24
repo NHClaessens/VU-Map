@@ -67,7 +67,7 @@ public class ResultPlotterWindow : EditorWindow
         GUILayout.Label("Screenshot name");
         ssName = GUILayout.TextField(ssName);
         if (GUILayout.Button("Take screenshot")) {
-            TakeScreenshot();
+            Utilities.TakeScreenshot(ssName);
         }
 
         EditorGUILayout.Space(32);
@@ -442,37 +442,5 @@ public class ResultPlotterWindow : EditorWindow
         );
     }
 
-    public void TakeScreenshot()
-    {
-        // Set up the RenderTexture
-        Camera screenshotCamera = GameObject.Find("Screenshot Camera").GetComponent<Camera>();
-        int width = 6500;
-        int height = 7300;
-        RenderTexture renderTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
-        screenshotCamera.targetTexture = renderTexture;
-        screenshotCamera.clearFlags = CameraClearFlags.SolidColor;
-        screenshotCamera.backgroundColor = new Color(0, 0, 0, 0); // Transparent background
 
-        // Render the camera
-        screenshotCamera.Render();
-
-        // Read pixels from the RenderTexture
-        RenderTexture.active = renderTexture;
-        Texture2D screenshot = new Texture2D(width, height, TextureFormat.ARGB32, false);
-        screenshot.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-        screenshot.Apply();
-
-        // Reset the RenderTexture and active texture
-        screenshotCamera.targetTexture = null;
-        RenderTexture.active = null;
-        Destroy(renderTexture);
-
-        // Save the texture to a PNG file
-        byte[] bytes = screenshot.EncodeToPNG();
-
-
-        File.WriteAllBytes(Application.dataPath + $"/../{ssName}".ToString() + ".png", bytes);
-
-        Debug.Log($"Screenshot saved");
-    }
 }
