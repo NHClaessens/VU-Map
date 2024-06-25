@@ -226,7 +226,7 @@ public class NavigationController : MonoBehaviour
         for(int i = 0; i < instructions.Count; i++) {
             Instruction instruction = instructions[i];
             GameObject clone = Instantiate(instructionTemplate);
-            clone.transform.SetParent(instructionContainer.transform);
+            clone.transform.SetParent(instructionContainer.transform, false);
 
 
             clone.transform.Find("Current/Title").GetComponent<TMP_Text>().text = instruction.toString();

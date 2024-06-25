@@ -48,6 +48,8 @@ public class SearchController : MonoBehaviour
             results.Sort();
         }
 
+        Debug.Log(results.Count);
+
         DisplayResults(results);
     }
 
@@ -64,11 +66,11 @@ public class SearchController : MonoBehaviour
 
             GameObject newTemplate = Instantiate(SearchResultTemplate);
             newTemplate.transform.Find("Title").GetComponent<TMP_Text>().text = poi.title;
-            newTemplate.transform.Find("Floor").GetComponent<TMP_Text>().text = "F6";
+            newTemplate.transform.Find("Floor").GetComponent<TMP_Text>().text = $"F{poi.floor}";
             newTemplate.GetComponent<Index>().index = index;
             newTemplate.SetActive(true);
 
-            newTemplate.transform.SetParent(SearchResultsContent.transform);
+            newTemplate.transform.SetParent(SearchResultsContent.transform, false);
             index++;
         }
     }
