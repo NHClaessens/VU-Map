@@ -88,6 +88,7 @@ public class Sampler : MonoBehaviour
     public void StartSampling() {
         VisualLogger.Log($"Start sampling for set {customSampleSet}");
         sampleUI.transform.Find("Setup").gameObject.SetActive(false);
+        sampleUI.transform.Find("Panel").gameObject.SetActive(true);
         WifiManager.scanComplete.AddListener(onScanComplete);
 
         fileName = $"{System.DateTime.Now:yyyyMMdd_HHmmss}-wifi{wifiSampleAmount}";
